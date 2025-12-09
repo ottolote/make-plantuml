@@ -2,46 +2,50 @@
 PLANTUML_JAR := plantuml.jar
 PLANTUML_URL := https://github.com/plantuml/plantuml/releases/download/v1.2024.3/plantuml-1.2024.3.jar
 
-# Find all .pu files, removing the leading ./ 
-SRC_FILES := $(patsubst ./%,%,$(shell find . -name "*.pu"))
+# Find all .pu files
+SRC_FILES := $(shell find . -name "*.pu")
 
-# Generate the list of all target files we want to create
-TARGET_FILES := $(patsubst %.pu,output/%.svg,$(SRC_FILES)) \
-                $(patsubst %.pu,output/%.png,$(SRC_FILES))
+# --- Rule Generation ---
+define RENDER_RULE
+# For a given source file (e.g., ./test/nisse.pu), define its targets and rules.
+SVG_TARGET := $(patsubst ./%.pu,output/%.svg,$(1))
+PNG_TARGET := $(patsubst ./%.pu,output/%.png,$(1))
+
+ALL_TARGETS += $$(SVG_TARGET) $$(PNG_TARGET)
+
+# Rule for the SVG file. It only depends on the source file.
+# If plantuml.jar is missing, the 'java -jar' command itself will fail.
+$$(SVG_TARGET): $(1)
+	@echo "Rendering $$< to $$@"
+	@mkdir -p $$(dir $$@)
+	@java -jar $(PLANTUML_JAR) -tsvg -pipe < $$< > $$@
+
+# Rule for the PNG file
+$$(PNG_TARGET): $(1)
+	@echo "Rendering $$< to $$@"
+	@mkdir -p $$(dir $$@)
+	@java -jar $(PLANTUML_JAR) -tpng -pipe < $$< > $$@
+
+endef
+
+$(foreach src,$(SRC_FILES),$(eval $(call RENDER_RULE,$(src))))
 
 
 # --- Main Targets ---
+all: $(ALL_TARGETS)
 
-# The default 'all' target depends on all the generated targets, and on the JAR file.
-all: $(PLANTUML_JAR) $(TARGET_FILES)
-
-# Rule to download plantuml.jar
-$(PLANTUML_JAR):
+download-plantuml:
 	@echo "Downloading PlantUML..."
 	@wget -O $(PLANTUML_JAR) $(PLANTUML_URL)
 
-install: $(PLANTUML_JAR)
-
-
-# --- Pattern Rules ---
-
-# Rule for creating an SVG file from a .pu file
-output/%.svg: %.pu $(PLANTUML_JAR)
-	@echo "Rendering $< to $@"
-	@mkdir -p $(dir $@)
-	@java -jar $(PLANTUML_JAR) -tsvg -pipe < $< > $@
-
-# Rule for creating a PNG file from a .pu file
-output/%.png: %.pu $(PLANTUML_JAR)
-	@echo "Rendering $< to $@"
-	@mkdir -p $(dir $@)
-	@java -jar $(PLANTUML_JAR) -tpng -pipe < $< > $@
+watch:
+	@echo "Starting watch mode... Press Ctrl+C to stop."
+	@./watch.sh
 
 
 # --- Utility Targets ---
 clean:
-	@echo "Cleaning output directory and downloaded JAR..."
-	@rm -rf output $(PLANTUML_JAR)
+	@echo "Cleaning output directory..."
+	@rm -rf output
 
-# Mark targets that are not actual files
-.PHONY: all clean install
+.PHONY: all clean download-plantuml watch
