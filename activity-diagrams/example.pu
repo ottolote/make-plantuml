@@ -1,0 +1,14 @@
+@startuml Example Activity Diagram
+start
+:User requests data;
+:System validates request;
+if (valid?) then (yes)
+  :Fetch data from database;
+  :Process data;
+  :Return data to user;
+else (no)
+  :Log error;
+  :Show error message;
+endif
+stop
+@enduml
