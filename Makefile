@@ -34,6 +34,21 @@ output/%.png: ./%.pu
 	@mkdir -p "$(dir $@)"
 	@java -jar $(PLANTUML_JAR) -tpng -pipe < "$<" > "$@"
 
+.PHONY: pdf
+pdf: $(ALL_SVG_TARGETS)
+	@echo "Creating diagrams.pdf with typst..."
+	@if ! command -v typst &> /dev/null; then \
+		echo "Error: 'typst' is not installed. Please install it to continue."; \
+		exit 1; \
+	fi
+	@echo "#set page(width: auto, height: auto, margin: 1cm)" > diagrams.typ
+	@for svg in $(ALL_SVG_TARGETS); do \
+		echo "#figure(image(\"$$svg\"))" >> diagrams.typ; \
+	done
+	@typst compile diagrams.typ
+	@rm diagrams.typ
+	@echo "Successfully created diagrams.pdf"
+
 download-plantuml:
 	@echo "Downloading PlantUML..."
 	@wget -O $(PLANTUML_JAR) $(PLANTUML_URL)
@@ -44,6 +59,6 @@ watch:
 
 clean:
 	@echo "Cleaning output directory..."
-	@rm -rf output
+	@rm -rf output diagrams.pdf
 
 .PHONY: clean download-plantuml watch

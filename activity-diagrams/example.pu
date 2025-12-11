@@ -1,4 +1,6 @@
 @startuml Example Activity Diagram
+title Example Activity Diagram
+
 start
 :User requests data;
 :System validates request;
