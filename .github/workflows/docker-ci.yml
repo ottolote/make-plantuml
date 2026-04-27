@@ -1,0 +1,38 @@
+name: Docker CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: local/make-plantuml:ci
+
+      - name: Smoke test render flow
+        run: |
+          rm -rf output
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -v "$PWD:/workspace" \
+            local/make-plantuml:ci render
+          test -f output/activity-diagrams/example.svg
+          test -f output/activity-diagrams/example.png
