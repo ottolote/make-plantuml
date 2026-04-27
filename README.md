@@ -34,7 +34,7 @@ Run a one-shot render against any mounted folder:
 docker run --rm \
   --user "$(id -u):$(id -g)" \
   -v "$(pwd):/workspace" \
-  ghcr.io/<owner>/make-plantuml:edge render
+  ghcr.io/<owner>/make-plantuml:latest render
 ```
 
 Run continuous watch mode:
@@ -43,7 +43,7 @@ Run continuous watch mode:
 docker run --rm -it \
   --user "$(id -u):$(id -g)" \
   -v "$(pwd):/workspace" \
-  ghcr.io/<owner>/make-plantuml:edge watch
+  ghcr.io/<owner>/make-plantuml:latest watch
 ```
 
 Defaults:
@@ -60,7 +60,7 @@ docker run --rm \
   -e OUTPUT_DIR=artifacts \
   -e FORMATS=svg,pdf \
   -v "$(pwd):/workspace" \
-  ghcr.io/<owner>/make-plantuml:edge render
+  ghcr.io/<owner>/make-plantuml:latest render
 ```
 
 Supported environment variables:
@@ -103,7 +103,7 @@ output/activity-diagrams/example.png
 GitHub Actions handles both validation and publication:
 
 - Pull requests and `main` builds run a Docker build plus a render smoke test
-- Pushes to `main` publish an `edge` image and a commit-specific `sha-*` tag to `ghcr.io`
+- Pushes to `main` publish a `latest` image and a commit-specific `sha-*` tag to `ghcr.io`
 - Version tags matching `v*` publish release images to `ghcr.io` and also update `latest`
 
 Expected package location:
