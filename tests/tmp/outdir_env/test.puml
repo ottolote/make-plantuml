@@ -1,0 +1,7 @@
+@startuml
+participant "TestA" as a
+participant "TestB" as b
+
+a -> b : Hello Testing World
+b --> a : Verified
+@enduml
