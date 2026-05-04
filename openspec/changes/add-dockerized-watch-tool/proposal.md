@@ -4,8 +4,8 @@ The current repository works as a local Makefile helper, but it still requires u
 
 ## What Changes
 
-- Add a containerized workflow for rendering and watch mode so users can mount a diagram directory and render `*.pu` files without local toolchain setup.
-- Improve the runtime behavior for mounted volumes, including predictable output locations and host-compatible file ownership to avoid permission problems.
+- Add a containerized workflow for rendering and watch mode so users can mount a diagram directory and render `*.pu` and `*.puml` files without local toolchain setup.
+- Improve the runtime behavior for mounted volumes, including predictable output locations (defaulting to alongside source files) and host-compatible file ownership to avoid permission problems.
 - Replace the current "download the jar and install dependencies yourself" setup with a more professional distribution story based on official upstream images where practical.
 - Upgrade the repository to be fully cloud-native, dropping legacy bash wrapper scripts or Makefiles for building/testing the container in favor of direct `docker run ghcr.io/<owner>/make-plantuml:latest ...` usage.
 - Retain a minimal internal `Makefile` strictly as a rendering optimization to avoid rebuilding unmodified PlantUML files inside the container runtime.

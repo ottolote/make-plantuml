@@ -27,4 +27,10 @@
 - [x] 5.1 Add a GitHub Actions workflow that builds the Docker image for pull requests and other validation triggers.
 - [x] 5.2 Add a GitHub Actions publish workflow that authenticates with GitHub Container Registry and pushes the image to `ghcr.io` with documented tags and OCI metadata.
 - [x] 5.3 Configure workflow permissions, package naming, and trigger rules so only intended branches or tags can publish public images.
-- [x] 5.4 Verify the CI/CD pipeline by running the build workflow locally where possible or validating the workflow definitions and documenting the release trigger strategy.
+## 6. Post-Release Fixes (SELinux, Podman, and Flexibility)
+
+- [x] 6.1 Refactor `Makefile` and `plantuml-tool.sh` to output rendered diagrams alongside source files by default instead of enforcing an `output/` directory, resolving volume mount permission blockers.
+- [x] 6.2 Update `README.md` troubleshooting, examples, and documentation to include specific guidance for running under Podman vs. Docker, including rootless User Namespaces and SELinux `:z` mount requirements.
+- [x] 6.3 Update the build toolchain (`Makefile` and `plantuml-tool.sh`) to support `.puml` file extensions in addition to `.pu`.
+- [x] 6.4 Fix the one-shot `render` command so it forces a complete re-render (`make -B`) instead of skipping existing output files.
+- [x] 6.5 Add `-o` / `--output` flag parsing to `plantuml-tool.sh` so users can specify the output directory natively via arguments.

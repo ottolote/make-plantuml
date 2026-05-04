@@ -2,7 +2,7 @@
 
 The repository currently provides a local Makefile-based workflow that renders `*.pu` diagrams into `output/` and offers `make watch` through `entr`. The main friction points are local dependency setup, manual PlantUML jar management, and container-host permission issues that appear as soon as this workflow is moved into Docker with bind mounts.
 
-This change turns the project into a release-ready containerized tool while preserving the existing simple model: discover PlantUML sources recursively, render deterministic outputs, and support continuous watch mode. The design needs to support both one-shot rendering and long-running watch usage against arbitrary mounted folders, preferably using official upstream images for the PlantUML runtime instead of maintaining a custom Java-plus-jar stack from scratch.
+This change turns the project into a release-ready containerized tool while preserving the existing simple model: discover PlantUML sources recursively, render deterministic outputs alongside source files, and support continuous watch mode. The design needs to support both one-shot rendering and long-running watch usage against arbitrary mounted folders, preferably using official upstream images for the PlantUML runtime instead of maintaining a custom Java-plus-jar stack from scratch.
 
 The release story also needs first-party automation: the public image should be built and published through GitHub Actions so maintainers can cut releases consistently and users can pull a trusted image from GitHub Container Registry.
 
@@ -39,7 +39,7 @@ Alternatives considered:
 
 ### 2. Separate runtime configuration from repo-local paths
 
-The container will operate on a configurable workspace mount path such as `/workspace`, with explicit input/output conventions documented in the CLI wrapper. The rendering logic should not depend on being run from the repository root; instead it should accept a target directory and discover `*.pu` files recursively within that mount.
+The container will operate on a configurable workspace mount path such as `/workspace`, with explicit input/output conventions documented in the CLI wrapper. The rendering logic should not depend on being run from the repository root; instead it should accept a target directory and discover `*.pu` and `*.puml` files recursively within that mount.
 
 Rationale:
 - This makes the tool usable as a general-purpose public image, not just for this repository.
@@ -48,7 +48,7 @@ Rationale:
 
 Alternatives considered:
 - Require users to mirror the repository layout exactly inside the container. Rejected because it is brittle and not suitable for public distribution.
-- Always render in-place next to source files. Rejected because the existing project uses a dedicated `output/` tree and that pattern is easier to clean and reason about.
+- Enforce rendering to an `output/` tree. Rejected because this introduces permission issues with Podman and SELinux volume mounts if the directory doesn't already exist or lacks the correct container labels. Defaulting to rendering adjacent to source files is the safest path.
 
 ### 3. Handle permissions through runtime UID/GID mapping rather than post-processing
 
@@ -65,7 +65,7 @@ Alternatives considered:
 
 ### 4. Replace the ad hoc watch loop with a container-friendly wrapper
 
-The current watch implementation loops forever around `find ... | entr -p make`. The new design will move this into a dedicated entrypoint or script that validates dependencies, performs an initial render, and then starts watch mode with clearer logging and robust restart behavior. The watch command should monitor `*.pu` changes recursively inside the mounted workspace and rerun the render command, keeping output semantics identical between one-shot and watch modes.
+The current watch implementation loops forever around `find ... | entr -p make`. The new design will move this into a dedicated entrypoint or script that validates dependencies, performs an initial render, and then starts watch mode with clearer logging and robust restart behavior. The watch command should monitor `*.pu` and `*.puml` changes recursively inside the mounted workspace and rerun the incremental render command, keeping output semantics identical between one-shot and watch modes.
 
 Rationale:
 - A single container entrypoint is easier to document and support than exposing raw shell scripts.
@@ -106,7 +106,7 @@ Alternatives considered:
 
 - [Official image constraints] -> The official PlantUML image may not include every helper dependency needed for watch mode, so a thin derivative image may still be required for `entr` and wrapper scripts.
 - [Filesystem event behavior on mounted volumes] -> Recursive watching through Docker bind mounts can vary by platform; document supported environments and favor polling/restart-safe `entr` usage over more fragile assumptions.
-- [Output path expectations] -> Users may want in-place output instead of `output/`; keep defaults predictable and consider configurable output roots in the final implementation.
+- [Output path expectations] -> Users may want an `output/` directory instead of in-place; expose an `-o` option to configure the output root in the final implementation.
 - [Long-running container ergonomics] -> Watch mode needs clear logs and clean shutdown behavior; implement signal handling in the entrypoint and avoid nested shell loops that obscure failures.
 - [Backward compatibility tension] -> Shifting emphasis from local jar downloads to Docker may confuse existing users; keep local contributor workflows available and document the transition clearly.
 - [Registry publishing mistakes] -> Misconfigured workflow triggers or tags could publish incorrect images; gate publishing on explicit branches/tags and use deterministic metadata generation.
@@ -126,6 +126,6 @@ Rollback strategy: if the Dockerized workflow proves unreliable, the repository 
 ## Open Questions
 
 - Should the public image support PDF generation from day one, or should the initial release focus strictly on `png`/`svg` rendering plus watch mode?
-- Should outputs always go to `output/`, or should the image expose an option to render adjacent to source files for users integrating with other tooling?
+- Should outputs always go adjacent to source files, or should the image expose an option to render to an `output/` tree for users integrating with other tooling? (Resolved: defaults adjacent, configurable via `-o`).
 - Which official upstream image provides the best balance of stability and extensibility for adding watch dependencies while keeping the image lean?
 - Which branch and tag strategy should trigger `ghcr.io` publication for stable and edge images?
